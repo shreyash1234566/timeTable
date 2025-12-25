@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AFCAT 30-Day Progress Tracker</title>
+  <style>
+    :root { --bg:#f6f8fa; --card:#fff; --ink:#0f172a; --muted:#64748b; --brand:#0ea5e9; --accent:#22c55e; --warn:#f59e0b; --danger:#ef4444; --border:#e5e7eb; }
+    * { box-sizing:border-box }
+    body { margin:0; padding:24px; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:var(--bg); color:var(--ink); }
+    .wrap { max-width: 1000px; margin: 0 auto; }
+    header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+    h1 { margin:0; font-size:22px; }
+    .actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    button, input, select { font: inherit; }
+    button { padding:10px 14px; border:1px solid var(--border); border-radius:8px; background:var(--card); cursor:pointer; }
+    button.primary { background:var(--brand); color:#fff; border-color:var(--brand); }
+    button.danger { background:var(--danger); color:#fff; border-color:var(--danger); }
+    button.ghost { background:transparent; border:none; }
+    .grid { display:grid; grid-template-columns: repeat(12, 1fr); gap:16px; }
+    .card { grid-column: span 12; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px; box-shadow:0 1px 4px rgba(0,0,0,0.05); }
+    @media (min-width: 900px) {
+      .span-6 { grid-column: span 6; }
+      .span-4 { grid-column: span 4; }
+      .span-8 { grid-column: span 8; }
+    }
+    .card h2 { margin:0 0 12px; font-size:18px; }
+    .muted { color:var(--muted); }
+    .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:8px; }
+    .stat { display:flex; flex-direction:column; gap:4px; padding:10px 12px; border:1px solid var(--border); border-radius:10px; min-width:120px; }
+    .stat .val { font-size:20px; font-weight:600; }
+    .bar { height:10px; background:#eef2ff; border-radius:6px; overflow:hidden; border:1px solid var(--border); }
+    .bar > .fill { height:100%; background:linear-gradient(90deg, var(--accent), #10b981); width:0%; transition: width 0.3s; }
+    .list { display:grid; gap:8px; margin-top:8px; }
+    .check { display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); border-radius:10px; background:#fafafa; }
+    .check input[type="checkbox"] { width:18px; height:18px; cursor:pointer; }
+    .check label { flex:1; cursor:pointer; }
+    .check.done { background:#d1fae5; }
+    .check.done label { text-decoration: line-through; opacity:0.7; }
+    .table { width:100%; border-collapse:collapse; }
+    .table th, .table td { padding:8px 10px; border-bottom:1px solid var(--border); text-align:left; font-size:14px; }
+    .table th { background:#f9fafb; }
+    .inline { display:inline-flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .sep { height:1px; background:var(--border); margin:12px 0; }
+    .help { font-size:12px; color:var(--muted); margin-top:4px; }
+    .title-box { padding:12px; background:#f0f4ff; border-radius:8px; border-left:4px solid var(--brand); margin-bottom:8px; }
+    input[type="text"], input[type="number"] { padding:8px; border:1px solid var(--border); border-radius:6px; }
+    a.btn { text-decoration:none; }
+    .status-bar { position:fixed; bottom:20px; right:20px; padding:12px 20px; border-radius:10px; font-size:14px; font-weight:500; z-index:1000; box-shadow:0 4px 12px rgba(0,0,0,0.15); display:none; }
+    .status-bar.success { background:#d1fae5; color:#065f46; border:1px solid #10b981; }
+    .status-bar.warn { background:#fef3c7; color:#92400e; border:1px solid #f59e0b; }
+    .status-bar.error { background:#fee2e2; color:#991b1b; border:1px solid #ef4444; }
+    .server-status { font-size:12px; padding:4px 8px; border-radius:4px; margin-left:8px; }
+    .server-status.online { background:#d1fae5; color:#065f46; }
+    .server-status.offline { background:#fef3c7; color:#92400e; }
+  </style>
+</head>
+<body>
+  <div id="statusBar" class="status-bar"></div>
+  <div class="wrap">
+    <header>
+      <h1>🎯 AFCAT 30-Day Progress Tracker</h1>
+      <div class="actions">
+        <button class="primary" onclick="syncWithServer()">🔄 Sync</button>
+        <button onclick="window.print()">🖨️ Print</button>
+        <button onclick="exportData()">📤 Export</button>
+        <label style="cursor:pointer;"><span style="padding:10px 14px; border:1px solid var(--border); border-radius:8px; background:var(--card);">📥 Import</span><input type="file" accept="application/json" onchange="importData(event)" style="display:none" /></label>
+        <a href="roadmap.html" target="_blank" class="btn"><button>📋 Roadmap</button></a>
+        <a href="timetable.html" target="_blank" class="btn"><button>📅 Timetable</button></a>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- Day selector -->
+      <section class="card span-4">
+        <h2>📆 Day Selector</h2>
+        <div class="row">
+          <label>Day (1-30): <input id="dayPicker" type="number" min="1" max="30" value="1" style="width:60px" /></label>
+          <button class="primary" onclick="setToday()">Set</button>
+        </div>
+        <div class="row">
+          <div class="stat"><span class="muted">Current Day</span><span class="val" id="statDay">1</span></div>
+          <div class="stat"><span class="muted">Week</span><span class="val" id="statWeek">1</span></div>
+        </div>
+      </section>
+
+      <!-- Overview -->
+      <section class="card span-8">
+        <h2>📊 Overview</h2>
+        <div class="row">
+          <div class="stat"><span class="muted">Tasks Done Today</span><span class="val" id="statTasksDone">0/0</span></div>
+          <div class="stat"><span class="muted">Mocks Completed</span><span class="val" id="statMocks">0</span></div>
+          <div class="stat"><span class="muted">Avg Score</span><span class="val" id="statAvgScore">--</span></div>
+          <div class="stat"><span class="muted">Time Today</span><span class="val" id="statTimeToday">0m</span></div>
+          <div class="stat"><span class="muted">Total Time</span><span class="val" id="statTimeTotal">0m</span></div>
+        </div>
+      </section>
+
+      <!-- Day-wise Roadmap -->
+      <section class="card span-12">
+        <h2>📅 Today's Roadmap (Day <span id="roadmapDay">1</span> - Week <span id="roadmapWeek">1</span>)</h2>
+        <div id="roadmapTitle" class="title-box"></div>
+        <div id="roadmapTasks" class="list"></div>
+      </section>
+
+      <!-- Today's To-Do List -->
+      <section class="card span-6">
+        <h2>📋 Today's To-Do List</h2>
+        <div class="row">
+          <input id="newTodoInput" type="text" placeholder="Add a custom task..." style="flex:1;" />
+          <button class="primary" onclick="addTodo()">Add</button>
+        </div>
+        <div id="todoList" class="list"></div>
+      </section>
+
+      <!-- Daily Checklist -->
+      <section class="card span-6">
+        <h2>✅ Daily Card Checklist</h2>
+        <div id="dailyChecklist" class="list"></div>
+      </section>
+
+      <!-- Time Tracking -->
+      <section class="card span-6">
+        <h2>⏱️ Time Tracking</h2>
+        <div class="row">
+          <label>Morning: <input id="timeMorning" type="number" min="0" max="300" style="width:60px" /> min</label>
+          <label>Evening: <input id="timeEvening" type="number" min="0" max="300" style="width:60px" /> min</label>
+          <label>Night: <input id="timeNight" type="number" min="0" max="300" style="width:60px" /> min</label>
+          <button onclick="saveTime()">Save</button>
+        </div>
+      </section>
+
+      <!-- Topic Progress -->
+      <section class="card span-6">
+        <h2>📚 Topic Progress</h2>
+        <div class="row">
+          <label>English: <input id="topicEng" type="number" min="0" max="100" style="width:50px" />%</label>
+          <label>Reasoning: <input id="topicRea" type="number" min="0" max="100" style="width:50px" />%</label>
+          <label>Maths: <input id="topicMat" type="number" min="0" max="100" style="width:50px" />%</label>
+          <label>GK: <input id="topicGK" type="number" min="0" max="100" style="width:50px" />%</label>
+          <button onclick="saveTopics()">Save</button>
+        </div>
+        <div id="topicSummary" class="help"></div>
+      </section>
+
+      <!-- Mock Logs -->
+      <section class="card span-12">
+        <h2>📝 Mock Test Logs</h2>
+        <div class="row">
+          <label>Date: <input id="mockDate" type="date" /></label>
+          <label>Score: <input id="mockScore" type="number" min="0" max="300" style="width:70px" />/300</label>
+          <label>Attempted: <input id="mockAttempted" type="number" min="0" max="100" style="width:60px" /></label>
+          <label>Correct: <input id="mockCorrect" type="number" min="0" max="100" style="width:60px" /></label>
+          <button class="primary" onclick="addMock()">Add Mock</button>
+        </div>
+        <table class="table" id="mockTable">
+          <thead><tr><th>#</th><th>Date</th><th>Score</th><th>Attempted</th><th>Correct</th><th>Accuracy</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // ============ DATA ============
+    // Auto-detect API URL based on environment
+    var API_URL = (window.location.hostname === 'localhost') 
+      ? 'http://localhost:3000/api'
+      : `${window.location.origin}/api`;
+    var STORAGE_KEY = 'afcatProgress_v2'; // Fallback only
+    
+    var defaultState = {
+      currentDay: 1,
+      dayTasks: {},
+      todos: [],
+      dailyChecks: {},
+      timeLog: {},
+      topicLog: {},
+      mocks: []
+    };
+
+    var state = Object.assign({}, defaultState);
+    var isOnline = false;
+    var saveTimeout = null;
+
+    // Try to load from backend first, fallback to localStorage
+    function loadState() {
+      return fetch(API_URL + '/progress')
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.success && data.data) {
+            isOnline = true;
+            state = Object.assign({}, defaultState, data.data);
+            showStatus('✅ Connected to server - Data synced!', 'success');
+            render();
+          }
+        })
+        .catch(function(err) {
+          console.log('Backend not available, using localStorage');
+          isOnline = false;
+          try {
+            var saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+              state = Object.assign({}, defaultState, JSON.parse(saved));
+            }
+          } catch (e) { console.error(e); }
+          showStatus('⚠️ Offline mode - Start server for persistent storage', 'warn');
+          render();
+        });
+    }
+
+    // Save to backend (debounced) with localStorage fallback
+    function saveState() {
+      // Always save to localStorage as backup
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      
+      // Debounce server saves
+      if (saveTimeout) clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(function() {
+        fetch(API_URL + '/progress', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(state)
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.success) {
+            isOnline = true;
+            showStatus('💾 Saved!', 'success', 1500);
+          }
+        })
+        .catch(function(err) {
+          isOnline = false;
+          showStatus('⚠️ Offline - saved locally', 'warn', 2000);
+        });
+      }, 500);
+      
+      render();
+    }
+
+    // Status notification
+    function showStatus(msg, type, duration) {
+      var el = document.getElementById('statusBar');
+      if (!el) return;
+      el.textContent = msg;
+      el.className = 'status-bar ' + (type || '');
+      el.style.display = 'block';
+      if (duration) {
+        setTimeout(function() { el.style.display = 'none'; }, duration);
+      }
+    }
+
+    // ============ ROADMAP DATA ============
+    var dayRoadmaps = {
+      1: { title: 'Setup + English Attack Topics', tasks: ['Print Attack/Retreat Card', 'Read card 3x (memorize colors)', 'Learn 30 idioms (Attack list)', 'Error spotting basics (Subject-verb, Tenses)', 'One-word substitution (25 words)', 'Sentence Improvement (15 questions)', 'RC: 1 story-based passage', 'Night: Review English Attack vs Retreat'] },
+      2: { title: 'Reasoning Attack Topics', tasks: ['Dot Situation (Theory + 20Q)', 'Venn Diagrams 2-3 sets (20Q)', 'Mirror Images (15Q)', 'Coding-Decoding +1/-1 shift (20Q)', 'English: 20 more idioms + revision', 'RC: 1 story passage', 'Night: Card Review - Reasoning section'] },
+      3: { title: 'Maths Attack Topics Part 1', tasks: ['Percentage (all formulas + 20 problems)', 'Average (formula + 15 problems)', 'Ratio & Proportion (15 problems)', 'Profit & Loss Basic CP/SP (15 problems)', 'English: Error Spotting (20Q)', 'RC: 1 story passage', 'Night: Card Review - Maths section'] },
+      4: { title: 'Maths Attack Topics Part 2', tasks: ['Simple Interest (formula + 12 problems)', 'Train Problems - Single train (10 problems)', 'Time & Work - 2 people max (12 problems)', 'Number Series Simple patterns (15Q)', 'English: Sentence Completion (15Q)', 'RC: 1 story passage', 'Night: Full Card Review - All 4 sections'] },
+      5: { title: 'GK Attack Topics + Current Affairs', tasks: ['Defense Exercises (Last 12 months)', 'IAF Aircraft & Missiles', 'Current Appointments (President, PM, CAS)', 'Sports Terms/Trophies', 'Awards (Recent 6 months)', 'Current Affairs: July-Aug 2025', 'Night: Card Review - GK section'] },
+      6: { title: 'Military Aptitude + Reasoning', tasks: ['Military Aptitude (FREE MARKS)', 'IAF Ranks (Air Marshal to Pilot Officer)', '7 Air Commands + HQ locations', 'Blood Relations - Simple (15Q)', 'Embedded Figures (15Q)', 'Cloze Test Grammar-based (2 passages)', 'RC: 1 story passage', 'Night: Memorize ranks + commands'] },
+      7: { title: 'Week 1 Consolidation + Card Mastery', tasks: ['CARD DRILL: Go through entire card', 'Attack Topic Revision: All subjects', 'Mixed Practice ATTACK ONLY (40Q)', 'RC: 2 story passages', 'Current Affairs: Sep-Oct 2025', 'CARD MEMORIZATION TEST', 'Week 1 Progress Check'] },
+      8: { title: 'Attack vs Retreat Identification Training', tasks: ['English Mixed Practice (30Q in 25 min)', 'Identify Attack/Retreat before solving', 'Reasoning Mixed Practice (35Q in 30 min)', 'RC: 1 story passage', 'Analyze: Did you skip Retreat topics?', 'Update Personal Retreat List'] },
+      9: { title: 'Maths Deep Practice (Attack Only)', tasks: ['Speed Drill: 15 Percentage (60s each)', '10 Average + 10 P&L + 8 Ratio', '10 SI + 8 Train + 10 Time&Work', 'English: Idioms revision (all 70)', 'RC: 1 passage', 'Retreat Recognition Drill (Maths)'] },
+      10: { title: 'Sectional Test 1 (English + Reasoning)', tasks: ['English Sectional Test (30Q in 25 min)', 'Use card - Attack topics only', 'Reasoning Sectional Test (35Q in 30 min)', 'Analyze: Attack accuracy = ?', 'Did you skip all Retreat? YES/NO', 'Update Personal Retreat List'] },
+      11: { title: 'GK Deep Dive + Current Affairs', tasks: ['Defense Exercises (complete 12 months)', 'Sports: All major tournaments (6 months)', 'Awards: Complete list (6 months)', 'IAF: Aircraft, missiles, ranks, commands', 'Current Affairs: Nov-Dec 2025', 'Polity Basics (Attack topic)', 'RC: 1 passage', 'GK Retreat Recognition'] },
+      12: { title: 'Numerical Ability Sectional Test', tasks: ['Maths Sectional Test (20Q in 20 min)', 'Card in front - Attack topics only', 'Analysis + Weak Area Practice', 'English: Error Spotting (20Q)', 'RC: 1 passage', 'Formula sheet revision'] },
+      13: { title: 'Pre-Mock Preparation', tasks: ['Mixed Practice All sections Attack only', 'Time yourself: 45 minutes total', 'Card Drill: Speed identification', '5-second decision time goal', 'RC: 2 passages', 'Current Affairs: Full revision July-Dec', 'Golden Rules Memorization'] },
+      14: { title: 'MOCK TEST 1 (Strategy Application)', tasks: ['FULL MOCK TEST 1 (100Q, 120 min)', 'First 15 min: Scan & mark Attack/Retreat', 'Next 80 min: Solve ONLY marked', 'Last 25 min: Review + maybe 3-5 more', 'Calculate score', 'Strategy Analysis (DETAILED)', 'Make Never Attempt & Always Attempt lists'] },
+      15: { title: 'Mock 1 Deep Review', tasks: ['Review ALL wrong questions', 'Were they Attack or Retreat?', 'Practice 10 similar questions', 'Focused Practice on Weak Attack Topics', 'RC: 2 passages', 'Card Update: Add personal triggers'] },
+      16: { title: 'Speed Building (Attack Topics)', tasks: ['20 English Attack questions (15 min)', '20 Reasoning Attack questions (15 min)', '10 Maths Attack questions (10 min)', '10 GK Attack questions (8 min)', 'Sectional Tests (Timed)', 'Current Affairs: Latest updates'] },
+      17: { title: 'MOCK TEST 2', tasks: ['FULL MOCK TEST 2', 'Use Never Attempt list', 'Stick to Attack-only strategy', 'Aim for 55-65 attempts', 'Analysis: Compare Mock 1 vs 2', 'Score improvement? Accuracy improvement?'] },
+      18: { title: 'Consolidation + Pattern Recognition', tasks: ['50 mixed questions - identify only', 'Dont solve, just say Attack or Retreat', '10 minutes max for identification', 'Practice strongest Attack topics', 'Build confidence', 'RC: 2 passages'] },
+      19: { title: 'MOCK TEST 3', tasks: ['FULL MOCK TEST 3', 'Target: 140+ score', 'Strategy should feel natural', 'Comprehensive Analysis', 'Mock 1 vs 2 vs 3 comparison', 'Score trend check'] },
+      20: { title: 'Strategy Fine-Tuning', tasks: ['Time Allocation Practice', 'English: 25m, Reasoning: 30m', 'Maths: 20m, GK: 15m, Review: 20m', 'Finalize exam day strategy', 'RC: 2 passages', 'Current Affairs: Final revision'] },
+      21: { title: 'MOCK TEST 4 + Week Review', tasks: ['FULL MOCK TEST 4', 'Apply finalized strategy', 'Analysis & Week 3 Review', '4 mocks completed total', 'Score progression chart', 'Celebrate progress!'] },
+      22: { title: 'MOCK TEST 5', tasks: ['FULL MOCK TEST 5', 'Treat as actual exam', 'Card in mind, not in hand', 'Quick analysis', 'RC: 2 passages', 'Light card review'] },
+      23: { title: 'Revision Day 1 (English + Reasoning)', tasks: ['English: All 100 idioms', 'One-word substitutions', 'Error spotting rules', 'RC strategy review', 'RC: 2 passages', 'Reasoning: All Attack topics', 'Military Aptitude: Full revision'] },
+      24: { title: 'MOCK TEST 6', tasks: ['FULL MOCK TEST 6', 'Brief analysis', 'Confidence check', 'Light revision only'] },
+      25: { title: 'Revision Day 2 (Maths + GK)', tasks: ['Maths: All formulas & patterns', 'Quick practice: 20 problems', 'GK: Defense exercises (12 months)', 'Sports, Awards, Appointments', 'IAF: Aircraft, missiles, ranks', 'RC: 2 passages'] },
+      26: { title: 'MOCK TEST 7', tasks: ['FULL MOCK TEST 7', 'Focus on calm execution', 'Quick analysis', 'Light revision'] },
+      27: { title: 'Strategy Consolidation', tasks: ['Review ALL 7 Mock Analyses', 'Score progression graph', 'Personal Exam Strategy (write down)', 'Practice 50Q (strongest topics)', 'Current Affairs: Latest update', 'Card Memorization Check'] },
+      28: { title: 'MOCK TEST 8 (Final Major Mock)', tasks: ['FULL MOCK TEST 8', 'Wake at exam time', 'Exact exam day routine', 'Strategy execution', 'Final Analysis', 'Confidence building'] },
+      29: { title: 'Light Revision + Mental Preparation', tasks: ['Card: Final review (read 3x slowly)', 'Formula sheets (quick glance)', 'Idioms + Vocabulary', 'RC: 1 easy passage', 'Current Affairs: Final update', 'GK Flashcards: Quick run', 'Sleep by 10 PM (7 hrs minimum)'] },
+      30: { title: 'EXAM DAY (31 January 2026)', tasks: ['6:00 AM: Wake up fresh', '6:30 AM: Light breakfast', '7:00 AM: Final 15-min revision', '7:30 AM: Get ready, check documents', '8:00 AM: Leave for exam center', 'At center: Stay calm, deep breathing', 'CLEAR AFCAT! 🎯'] }
+    };
+
+    var dailyChecklistItems = [
+      { id: 'morning', label: 'Read card once in morning' },
+      { id: 'practice', label: 'Use card during practice/tests' },
+      { id: 'night', label: 'Review card at night' },
+      { id: 'recognition', label: 'Practice 5-second recognition' },
+      { id: 'triggers', label: 'Update personal triggers' }
+    ];
+
+    // ============ FUNCTIONS ============
+    function setToday() {
+      var d = parseInt(document.getElementById('dayPicker').value) || 1;
+      state.currentDay = Math.max(1, Math.min(30, d));
+      saveState();
+    }
+
+    function getWeek(day) {
+      return Math.ceil(day / 7);
+    }
+
+    // Roadmap tasks
+    function toggleRoadmapTask(day, taskIndex) {
+      var key = day + '_' + taskIndex;
+      state.dayTasks[key] = !state.dayTasks[key];
+      saveState();
+    }
+
+    function isRoadmapTaskDone(day, taskIndex) {
+      return state.dayTasks[day + '_' + taskIndex] === true;
+    }
+
+    // To-do list
+    function addTodo() {
+      var input = document.getElementById('newTodoInput');
+      var text = (input.value || '').trim();
+      if (!text) return;
+      state.todos.push({
+        id: Date.now(),
+        text: text,
+        done: false,
+        day: state.currentDay
+      });
+      input.value = '';
+      saveState();
+    }
+
+    function toggleTodo(id) {
+      for (var i = 0; i < state.todos.length; i++) {
+        if (state.todos[i].id === id) {
+          state.todos[i].done = !state.todos[i].done;
+          break;
+        }
+      }
+      saveState();
+    }
+
+    function removeTodo(id) {
+      state.todos = state.todos.filter(function(t) { return t.id !== id; });
+      saveState();
+    }
+
+    // Daily checklist
+    function toggleDailyCheck(day, checkId) {
+      if (!state.dailyChecks[day]) state.dailyChecks[day] = {};
+      state.dailyChecks[day][checkId] = !state.dailyChecks[day][checkId];
+      saveState();
+    }
+
+    function isDailyCheckDone(day, checkId) {
+      return state.dailyChecks[day] && state.dailyChecks[day][checkId] === true;
+    }
+
+    // Time tracking
+    function saveTime() {
+      var day = state.currentDay;
+      state.timeLog[day] = {
+        morning: parseInt(document.getElementById('timeMorning').value) || 0,
+        evening: parseInt(document.getElementById('timeEvening').value) || 0,
+        night: parseInt(document.getElementById('timeNight').value) || 0
+      };
+      saveState();
+    }
+
+    // Topic progress
+    function saveTopics() {
+      var day = state.currentDay;
+      state.topicLog[day] = {
+        eng: parseInt(document.getElementById('topicEng').value) || 0,
+        rea: parseInt(document.getElementById('topicRea').value) || 0,
+        mat: parseInt(document.getElementById('topicMat').value) || 0,
+        gk: parseInt(document.getElementById('topicGK').value) || 0
+      };
+      saveState();
+    }
+
+    // Mock tests
+    function addMock() {
+      var score = parseInt(document.getElementById('mockScore').value);
+      if (isNaN(score)) return;
+      state.mocks.push({
+        date: document.getElementById('mockDate').value || new Date().toISOString().split('T')[0],
+        score: score,
+        attempted: parseInt(document.getElementById('mockAttempted').value) || 0,
+        correct: parseInt(document.getElementById('mockCorrect').value) || 0
+      });
+      document.getElementById('mockScore').value = '';
+      document.getElementById('mockAttempted').value = '';
+      document.getElementById('mockCorrect').value = '';
+      saveState();
+    }
+
+    function removeMock(index) {
+      state.mocks.splice(index, 1);
+      saveState();
+    }
+
+    // Export/Import
+    function exportData() {
+      if (isOnline) {
+        // Download from server
+        window.open(API_URL + '/export', '_blank');
+      } else {
+        // Fallback to local export
+        var blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'afcat-progress.json';
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    }
+
+    function importData(event) {
+      var file = event.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function() {
+        try {
+          var data = JSON.parse(reader.result);
+          state = Object.assign({}, defaultState, data);
+          saveState();
+          showStatus('📥 Data imported successfully!', 'success', 2000);
+        } catch (e) { 
+          alert('Invalid file'); 
+          showStatus('❌ Import failed', 'error', 2000);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // Sync with server
+    function syncWithServer() {
+      showStatus('🔄 Syncing...', 'warn');
+      fetch(API_URL + '/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(state)
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data.success) {
+          isOnline = true;
+          showStatus('✅ Synced with server!', 'success', 2000);
+        }
+      })
+      .catch(function(err) {
+        isOnline = false;
+        showStatus('❌ Server unavailable', 'error', 2000);
+      });
+    }
+
+    // ============ RENDER ============
+    function render() {
+      var day = state.currentDay;
+      var week = getWeek(day);
+
+      // Day selector
+      document.getElementById('dayPicker').value = day;
+      document.getElementById('statDay').textContent = day;
+      document.getElementById('statWeek').textContent = week;
+      document.getElementById('roadmapDay').textContent = day;
+      document.getElementById('roadmapWeek').textContent = week;
+
+      // Roadmap
+      var roadmap = dayRoadmaps[day] || { title: 'Rest Day', tasks: [] };
+      document.getElementById('roadmapTitle').innerHTML = '<strong>' + roadmap.title + '</strong>';
+      
+      var tasksContainer = document.getElementById('roadmapTasks');
+      tasksContainer.innerHTML = '';
+      for (var i = 0; i < roadmap.tasks.length; i++) {
+        var task = roadmap.tasks[i];
+        var done = isRoadmapTaskDone(day, i);
+        var div = document.createElement('div');
+        div.className = 'check' + (done ? ' done' : '');
+        div.innerHTML = '<input type="checkbox" ' + (done ? 'checked' : '') + ' onchange="toggleRoadmapTask(' + day + ',' + i + ')" /><label>' + task + '</label>';
+        tasksContainer.appendChild(div);
+      }
+
+      // Count tasks done today
+      var totalTasks = roadmap.tasks.length;
+      var doneTasks = 0;
+      for (var j = 0; j < roadmap.tasks.length; j++) {
+        if (isRoadmapTaskDone(day, j)) doneTasks++;
+      }
+      document.getElementById('statTasksDone').textContent = doneTasks + '/' + totalTasks;
+
+      // To-do list
+      var todoContainer = document.getElementById('todoList');
+      todoContainer.innerHTML = '';
+      var todayTodos = state.todos.filter(function(t) { return t.day === day; });
+      if (todayTodos.length === 0) {
+        todoContainer.innerHTML = '<div class="help">No custom tasks. Add one above!</div>';
+      } else {
+        for (var k = 0; k < todayTodos.length; k++) {
+          var todo = todayTodos[k];
+          var tdiv = document.createElement('div');
+          tdiv.className = 'check' + (todo.done ? ' done' : '');
+          tdiv.innerHTML = '<input type="checkbox" ' + (todo.done ? 'checked' : '') + ' onchange="toggleTodo(' + todo.id + ')" /><label>' + todo.text + '</label><button class="ghost" onclick="removeTodo(' + todo.id + ')">✕</button>';
+          todoContainer.appendChild(tdiv);
+        }
+      }
+
+      // Daily checklist
+      var checklistContainer = document.getElementById('dailyChecklist');
+      checklistContainer.innerHTML = '';
+      for (var m = 0; m < dailyChecklistItems.length; m++) {
+        var item = dailyChecklistItems[m];
+        var chkDone = isDailyCheckDone(day, item.id);
+        var cdiv = document.createElement('div');
+        cdiv.className = 'check' + (chkDone ? ' done' : '');
+        cdiv.innerHTML = '<input type="checkbox" ' + (chkDone ? 'checked' : '') + ' onchange="toggleDailyCheck(' + day + ',\'' + item.id + '\')" /><label>' + item.label + '</label>';
+        checklistContainer.appendChild(cdiv);
+      }
+
+      // Time tracking
+      var timeData = state.timeLog[day] || { morning: 0, evening: 0, night: 0 };
+      document.getElementById('timeMorning').value = timeData.morning || '';
+      document.getElementById('timeEvening').value = timeData.evening || '';
+      document.getElementById('timeNight').value = timeData.night || '';
+      var todayTime = (timeData.morning || 0) + (timeData.evening || 0) + (timeData.night || 0);
+      document.getElementById('statTimeToday').textContent = todayTime + 'm';
+      
+      var totalTime = 0;
+      for (var tKey in state.timeLog) {
+        var t = state.timeLog[tKey];
+        totalTime += (t.morning || 0) + (t.evening || 0) + (t.night || 0);
+      }
+      document.getElementById('statTimeTotal').textContent = totalTime + 'm';
+
+      // Topic progress
+      var topicData = state.topicLog[day] || { eng: 0, rea: 0, mat: 0, gk: 0 };
+      document.getElementById('topicEng').value = topicData.eng || '';
+      document.getElementById('topicRea').value = topicData.rea || '';
+      document.getElementById('topicMat').value = topicData.mat || '';
+      document.getElementById('topicGK').value = topicData.gk || '';
+      
+      // Average topic accuracy
+      var topicCount = 0, topicSum = 0;
+      for (var pKey in state.topicLog) {
+        var p = state.topicLog[pKey];
+        if (p.eng) { topicSum += p.eng; topicCount++; }
+        if (p.rea) { topicSum += p.rea; topicCount++; }
+        if (p.mat) { topicSum += p.mat; topicCount++; }
+        if (p.gk) { topicSum += p.gk; topicCount++; }
+      }
+      document.getElementById('topicSummary').textContent = topicCount ? 'Avg accuracy: ' + Math.round(topicSum / topicCount) + '%' : '';
+
+      // Mock tests
+      var mockBody = document.querySelector('#mockTable tbody');
+      mockBody.innerHTML = '';
+      document.getElementById('statMocks').textContent = state.mocks.length;
+      
+      if (state.mocks.length > 0) {
+        var scoreSum = 0;
+        for (var n = 0; n < state.mocks.length; n++) {
+          scoreSum += state.mocks[n].score;
+        }
+        var avgScore = Math.round(scoreSum / state.mocks.length);
+        document.getElementById('statAvgScore').textContent = avgScore;
+      } else {
+        document.getElementById('statAvgScore').textContent = '--';
+      }
+
+      for (var q = 0; q < state.mocks.length; q++) {
+        var mock = state.mocks[q];
+        var acc = mock.attempted ? Math.round((mock.correct / mock.attempted) * 100) + '%' : '--';
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td>' + (q + 1) + '</td><td>' + mock.date + '</td><td>' + mock.score + '</td><td>' + mock.attempted + '</td><td>' + mock.correct + '</td><td>' + acc + '</td><td><button class="ghost" onclick="removeMock(' + q + ')">✕</button></td>';
+        mockBody.appendChild(tr);
+      }
+    }
+
+    // Enter key for todo
+    document.getElementById('newTodoInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') addTodo();
+    });
+
+    // Initial load from server
+    loadState();
+  </script>
+</body>
+</html>

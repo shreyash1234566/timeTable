@@ -1,0 +1,7 @@
+node_modules/
+.env.local
+.env
+progress-data.json
+.vercel/
+*.log
+.DS_Store

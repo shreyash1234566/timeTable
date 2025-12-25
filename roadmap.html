@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AFCAT Attack/Retreat Card</title>
+    <style>
+        @media print {
+            body { margin: 0; padding: 10mm; }
+            .no-print { display: none; }
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial Black', Arial, sans-serif;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 15px;
+            background: #f5f5f5;
+        }
+        
+        .card {
+            background: white;
+            border: 4px solid #000;
+            padding: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #000;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+        }
+        
+        .header .subtitle {
+            font-size: 11px;
+            font-weight: normal;
+            font-family: Arial, sans-serif;
+        }
+        
+        .section {
+            margin-bottom: 12px;
+            border-left: 4px solid #000;
+            padding-left: 10px;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+        
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        
+        .attack, .retreat {
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+        
+        .attack {
+            background: #d4edda;
+            border: 2px solid #28a745;
+        }
+        
+        .retreat {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+        }
+        
+        .label {
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 4px;
+            display: block;
+        }
+        
+        .attack .label {
+            color: #155724;
+        }
+        
+        .retreat .label {
+            color: #721c24;
+        }
+        
+        .item {
+            margin-bottom: 2px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .golden-rules {
+            background: #fff3cd;
+            border: 3px solid #ffc107;
+            padding: 10px;
+            margin-top: 12px;
+            text-align: center;
+        }
+        
+        .golden-rules h3 {
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+        
+        .golden-rules p {
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+            margin: 3px 0;
+            font-weight: bold;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 12px;
+            padding-top: 8px;
+            border-top: 2px dashed #000;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .print-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+            display: block;
+            margin: 20px auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .print-btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <button class="print-btn no-print" onclick="window.print()">🖨️ PRINT THIS CARD</button>
+    
+    <div class="card">
+        <div class="header">
+            <h1>AFCAT ATTACK/RETREAT</h1>
+            <p class="subtitle">31 JANUARY 2026 • TARGET: 48-52 CORRECT • 145-150 MARKS</p>
+        </div>
+        
+        <!-- REASONING -->
+        <div class="section">
+            <div class="section-title">⚡ REASONING</div>
+            <div class="row">
+                <div class="attack">
+                    <span class="label">✓ ATTACK</span>
+                    <div class="item">• Dot Situation</div>
+                    <div class="item">• Venn (≤3 sets)</div>
+                    <div class="item">• Mirror/Embedded</div>
+                    <div class="item">• Coding (+1/-1)</div>
+                    <div class="item">• Blood Relations (simple)</div>
+                    <div class="item">• Military Aptitude</div>
+                </div>
+                <div class="retreat">
+                    <span class="label">✗ RETREAT</span>
+                    <div class="item">• Missing Character (>30s)</div>
+                    <div class="item">• Syllogism (if doubt)</div>
+                    <div class="item">• Data Sufficiency</div>
+                    <div class="item">• Statement & Conclusion</div>
+                    <div class="item">• Venn (4+ sets)</div>
+                    <div class="item">• Seating (6+ people)</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- MATHS -->
+        <div class="section">
+            <div class="section-title">🔢 MATHS</div>
+            <div class="row">
+                <div class="attack">
+                    <span class="label">✓ ATTACK</span>
+                    <div class="item">• Average</div>
+                    <div class="item">• Percentage</div>
+                    <div class="item">• P&L (basic CP/SP)</div>
+                    <div class="item">• Ratio</div>
+                    <div class="item">• Train (single object)</div>
+                    <div class="item">• Simple Interest</div>
+                    <div class="item">• Time & Work (2 people max)</div>
+                </div>
+                <div class="retreat">
+                    <span class="label">✗ RETREAT</span>
+                    <div class="item">• Compound Interest</div>
+                    <div class="item">• Races / Circular Tracks</div>
+                    <div class="item">• 3D Mensuration</div>
+                    <div class="item">• Clocks & Calendars</div>
+                    <div class="item">• Trains (relative speed)</div>
+                    <div class="item">• P&C / Probability</div>
+                    <div class="item">• Boats & Streams</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ENGLISH -->
+        <div class="section">
+            <div class="section-title">📝 ENGLISH</div>
+            <div class="row">
+                <div class="attack">
+                    <span class="label">✓ ATTACK</span>
+                    <div class="item">• RC (1 story passage)</div>
+                    <div class="item">• Idioms (if heard)</div>
+                    <div class="item">• Error Spotting (obvious)</div>
+                    <div class="item">• Sentence Improvement</div>
+                    <div class="item">• One-word Substitution</div>
+                    <div class="item">• Cloze (grammar-based)</div>
+                </div>
+                <div class="retreat">
+                    <span class="label">✗ RETREAT</span>
+                    <div class="item">• Alien Vocabulary</div>
+                    <div class="item">• Para Jumbles (unclear)</div>
+                    <div class="item">• Spelling Traps</div>
+                    <div class="item">• Technical RC</div>
+                    <div class="item">• Complex Grammar</div>
+                    <div class="item">• Active-Passive (complex)</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- GK -->
+        <div class="section">
+            <div class="section-title">🌍 GENERAL AWARENESS</div>
+            <div class="row">
+                <div class="attack">
+                    <span class="label">✓ ATTACK</span>
+                    <div class="item">• Defense Exercises</div>
+                    <div class="item">• Sports Terms/Trophies</div>
+                    <div class="item">• Awards (Gallantry/Padma)</div>
+                    <div class="item">• Current Appointments</div>
+                    <div class="item">• IAF Aircraft/Missiles</div>
+                    <div class="item">• Polity Basics</div>
+                </div>
+                <div class="retreat">
+                    <span class="label">✗ RETREAT</span>
+                    <div class="item">• Books/Authors (unknown)</div>
+                    <div class="item">• Ancient History</div>
+                    <div class="item">• Art & Culture</div>
+                    <div class="item">• World Geography</div>
+                    <div class="item">• Economics Theory</div>
+                    <div class="item">• Science Formulas</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- GOLDEN RULES -->
+        <div class="golden-rules">
+            <h3>🎯 GOLDEN RULES</h3>
+            <p>30-SECOND TEST: No answer? → SKIP</p>
+            <p>80% CONFIDENCE? → DO IT | Anything less? → SKIP IT</p>
+            <p>TARGET: 55-65 ATTEMPTS | 48-52 CORRECT | 145-150 MARKS</p>
+        </div>
+        
+        <div class="footer">
+            <strong>EXAM SEQUENCE:</strong> 15 min scan → 80 min solve ✓ marked → 25 min review<br>
+            <strong>SKIP = STRATEGY, NOT WEAKNESS</strong> • Every skip saves time for sure shots
+        </div>
+    </div>
+    
+    <button class="print-btn no-print" onclick="window.print()">🖨️ PRINT THIS CARD</button>
+</body>
+</html>

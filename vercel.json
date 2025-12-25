@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/progress.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "progress.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/progress.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/progress.html"
+    }
+  ],
+  "env": {
+    "DATA_DIR": "/tmp"
+  }
+}
