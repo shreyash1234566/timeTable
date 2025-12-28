@@ -13,11 +13,11 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
   console.error('Add these to your .env file');
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = createClient(SUPABASE_URL || '', SUPABASE_KEY || '');
 
 // Middleware
 app.use(cors({
-  origin: process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000',
+  origin: true,
   credentials: true
 }));
 app.use(express.json());
@@ -34,11 +34,52 @@ const defaultData = {
   lastUpdated: null
 };
 
-// Load data from Supabase
-async function loadData() {
+// Get table name based on user type
+function getTableName(userType) {
+  if (userType === 'user1') return 'user1_progress';
+  if (userType === 'user2') return 'user2_progress';
+  throw new Error('Invalid user type');
+}
+
+// ============ LOGIN ROUTE ============
+app.post('/api/login', async (req, res) => {
   try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ success: false, message: 'Username and password required' });
+    }
+
     const { data, error } = await supabase
-      .from('progress')
+      .from('users')
+      .select('*')
+      .eq('username', username)
+      .eq('password', password)
+      .single();
+
+    if (error || !data) {
+      return res.status(401).json({ success: false, message: 'Invalid username or password' });
+    }
+
+    res.json({
+      success: true,
+      user: {
+        username: data.username,
+        userType: data.user_type
+      }
+    });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Load data from Supabase for specific user
+async function loadData(userType) {
+  try {
+    const tableName = getTableName(userType);
+    const { data, error } = await supabase
+      .from(tableName)
       .select('*')
       .eq('id', 1)
       .single();
@@ -54,13 +95,14 @@ async function loadData() {
   }
 }
 
-// Save data to Supabase
-async function saveData(data) {
+// Save data to Supabase for specific user
+async function saveData(userType, data) {
   try {
+    const tableName = getTableName(userType);
     data.lastUpdated = new Date().toISOString();
 
     const { error } = await supabase
-      .from('progress')
+      .from(tableName)
       .upsert(
         { id: 1, data, updated_at: new Date().toISOString() },
         { onConflict: 'id' }
@@ -76,21 +118,29 @@ async function saveData(data) {
 
 // ============ API ROUTES ============
 
-// GET - Load all progress data
+// GET - Load all progress data for user
 app.get('/api/progress', async (req, res) => {
   try {
-    const data = await loadData();
+    const userType = req.query.userType;
+    if (!userType) {
+      return res.status(400).json({ success: false, message: 'User type required' });
+    }
+    const data = await loadData(userType);
     res.json({ success: true, data });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to load data' });
   }
 });
 
-// POST - Save all progress data
+// POST - Save all progress data for user
 app.post('/api/progress', async (req, res) => {
   try {
+    const userType = req.query.userType;
+    if (!userType) {
+      return res.status(400).json({ success: false, message: 'User type required' });
+    }
     const data = req.body;
-    if (await saveData(data)) {
+    if (await saveData(userType, data)) {
       res.json({ success: true, message: 'Progress saved!' });
     } else {
       res.status(500).json({ success: false, message: 'Failed to save' });
@@ -100,16 +150,20 @@ app.post('/api/progress', async (req, res) => {
   }
 });
 
-// PUT - Update specific field
+// PUT - Update specific field for user
 app.put('/api/progress/:field', async (req, res) => {
   try {
+    const userType = req.query.userType;
+    if (!userType) {
+      return res.status(400).json({ success: false, message: 'User type required' });
+    }
     const { field } = req.params;
     const { value } = req.body;
-    const data = await loadData();
+    const data = await loadData(userType);
 
     if (field in data) {
       data[field] = value;
-      if (await saveData(data)) {
+      if (await saveData(userType, data)) {
         res.json({ success: true, message: `${field} updated!` });
       } else {
         res.status(500).json({ success: false, message: 'Failed to save' });
@@ -122,10 +176,14 @@ app.put('/api/progress/:field', async (req, res) => {
   }
 });
 
-// GET - Statistics summary
+// GET - Statistics summary for user
 app.get('/api/stats', async (req, res) => {
   try {
-    const data = await loadData();
+    const userType = req.query.userType;
+    if (!userType) {
+      return res.status(400).json({ success: false, message: 'User type required' });
+    }
+    const data = await loadData(userType);
 
     // Calculate stats
     const totalTasksDone = Object.keys(data.dayTasks).filter(k => data.dayTasks[k]).length;
@@ -159,10 +217,14 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
-// DELETE - Reset all data
+// DELETE - Reset all data for user
 app.delete('/api/progress', async (req, res) => {
   try {
-    if (await saveData({ ...defaultData })) {
+    const userType = req.query.userType;
+    if (!userType) {
+      return res.status(400).json({ success: false, message: 'User type required' });
+    }
+    if (await saveData(userType, { ...defaultData })) {
       res.json({ success: true, message: 'All data reset!' });
     } else {
       res.status(500).json({ success: false, message: 'Failed to reset' });
@@ -172,12 +234,16 @@ app.delete('/api/progress', async (req, res) => {
   }
 });
 
-// Export data as downloadable JSON
+// Export data as downloadable JSON for user
 app.get('/api/export', async (req, res) => {
   try {
-    const data = await loadData();
+    const userType = req.query.userType;
+    if (!userType) {
+      return res.status(400).json({ success: false, message: 'User type required' });
+    }
+    const data = await loadData(userType);
     res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Content-Disposition', 'attachment; filename=afcat-progress-backup.json');
+    res.setHeader('Content-Disposition', `attachment; filename=afcat-progress-${userType}-backup.json`);
     res.send(JSON.stringify(data, null, 2));
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to export' });

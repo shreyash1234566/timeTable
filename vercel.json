@@ -6,7 +6,7 @@
       "use": "@vercel/node"
     },
     {
-      "src": "progress.html",
+      "src": "*.html",
       "use": "@vercel/static"
     }
   ],
@@ -16,8 +16,28 @@
       "dest": "/api/progress.js"
     },
     {
-      "src": "/(.*)",
+      "src": "/login.html",
+      "dest": "/login.html"
+    },
+    {
+      "src": "/progress.html",
       "dest": "/progress.html"
+    },
+    {
+      "src": "/roadmap.html",
+      "dest": "/roadmap.html"
+    },
+    {
+      "src": "/timetable.html",
+      "dest": "/timetable.html"
+    },
+    {
+      "src": "/",
+      "dest": "/login.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/login.html"
     }
   ],
   "env": {

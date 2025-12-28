@@ -61,12 +61,14 @@
     <header>
       <h1>🎯 AFCAT 30-Day Progress Tracker</h1>
       <div class="actions">
+        <span id="userInfo" style="padding:10px; background:#e0f2fe; border-radius:8px; font-size:14px;">👤 Loading...</span>
         <button class="primary" onclick="syncWithServer()">🔄 Sync</button>
         <button onclick="window.print()">🖨️ Print</button>
         <button onclick="exportData()">📤 Export</button>
         <label style="cursor:pointer;"><span style="padding:10px 14px; border:1px solid var(--border); border-radius:8px; background:var(--card);">📥 Import</span><input type="file" accept="application/json" onchange="importData(event)" style="display:none" /></label>
         <a href="roadmap.html" target="_blank" class="btn"><button>📋 Roadmap</button></a>
         <a href="timetable.html" target="_blank" class="btn"><button>📅 Timetable</button></a>
+        <button class="danger" onclick="logout()">🚪 Logout</button>
       </div>
     </header>
 
@@ -162,12 +164,33 @@
   </div>
 
   <script>
+    // ============ SESSION CHECK ============
+    var currentUser = null;
+    
+    (function() {
+      var session = localStorage.getItem('afcat_session');
+      if (!session) {
+        window.location.href = 'login.html';
+        return;
+      }
+      try {
+        currentUser = JSON.parse(session);
+        if (!currentUser || !currentUser.userType) {
+          localStorage.removeItem('afcat_session');
+          window.location.href = 'login.html';
+        }
+      } catch(e) {
+        localStorage.removeItem('afcat_session');
+        window.location.href = 'login.html';
+      }
+    })();
+
     // ============ DATA ============
     // Auto-detect API URL based on environment
     var API_URL = (window.location.hostname === 'localhost') 
       ? 'http://localhost:3000/api'
-      : `${window.location.origin}/api`;
-    var STORAGE_KEY = 'afcatProgress_v2'; // Fallback only
+      : window.location.origin + '/api';
+    var STORAGE_KEY = 'afcatProgress_' + (currentUser ? currentUser.userType : 'v2');
     
     var defaultState = {
       currentDay: 1,
@@ -183,15 +206,30 @@
     var isOnline = false;
     var saveTimeout = null;
 
+    // Get API URL with user type
+    function getApiUrl(endpoint) {
+      var url = API_URL + endpoint;
+      if (currentUser && currentUser.userType) {
+        url += (url.includes('?') ? '&' : '?') + 'userType=' + currentUser.userType;
+      }
+      return url;
+    }
+
+    // Logout function
+    function logout() {
+      localStorage.removeItem('afcat_session');
+      window.location.href = 'login.html';
+    }
+
     // Try to load from backend first, fallback to localStorage
     function loadState() {
-      return fetch(API_URL + '/progress')
+      return fetch(getApiUrl('/progress'))
         .then(function(res) { return res.json(); })
         .then(function(data) {
           if (data.success && data.data) {
             isOnline = true;
             state = Object.assign({}, defaultState, data.data);
-            showStatus('✅ Connected to server - Data synced!', 'success');
+            showStatus('✅ Welcome ' + currentUser.username + '! Data synced.', 'success');
             render();
           }
         })
@@ -217,7 +255,7 @@
       // Debounce server saves
       if (saveTimeout) clearTimeout(saveTimeout);
       saveTimeout = setTimeout(function() {
-        fetch(API_URL + '/progress', {
+        fetch(getApiUrl('/progress'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(state)
@@ -403,14 +441,14 @@
     function exportData() {
       if (isOnline) {
         // Download from server
-        window.open(API_URL + '/export', '_blank');
+        window.open(getApiUrl('/export'), '_blank');
       } else {
         // Fallback to local export
         var blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
         a.href = url;
-        a.download = 'afcat-progress.json';
+        a.download = 'afcat-progress-' + (currentUser ? currentUser.userType : 'backup') + '.json';
         a.click();
         URL.revokeObjectURL(url);
       }
@@ -437,7 +475,7 @@
     // Sync with server
     function syncWithServer() {
       showStatus('🔄 Syncing...', 'warn');
-      fetch(API_URL + '/progress', {
+      fetch(getApiUrl('/progress'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(state)
@@ -573,6 +611,11 @@
         var tr = document.createElement('tr');
         tr.innerHTML = '<td>' + (q + 1) + '</td><td>' + mock.date + '</td><td>' + mock.score + '</td><td>' + mock.attempted + '</td><td>' + mock.correct + '</td><td>' + acc + '</td><td><button class="ghost" onclick="removeMock(' + q + ')">✕</button></td>';
         mockBody.appendChild(tr);
+      }
+
+      // Update user info display
+      if (currentUser) {
+        document.getElementById('userInfo').textContent = '👤 ' + currentUser.username + ' (' + currentUser.userType + ')';
       }
     }
 
